@@ -14,7 +14,7 @@ binding = "ASSETS"
 # valid JS identifier, so it is not the same as the namespace title.
 [[kv_namespaces]]
 binding = "VULCAN"
-id = "910c53d8c1294b36bcb3839ef773a165"
+id = "PASTE_YOUR_KV_NAMESPACE_ID_HERE"
 
 [vars]
 ADMIN_USER = "VulcanAdmin"

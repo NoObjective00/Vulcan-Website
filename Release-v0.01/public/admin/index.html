@@ -126,10 +126,11 @@ function toast(msg){ const t=$('toast'); t.textContent=msg; t.style.display='blo
 
 async function api(path, opts){
   const r = await fetch(path, Object.assign({ headers:{'content-type':'application/json'} }, opts));
-  if (r.status === 401){ show('login'); throw new Error('Signed out'); }
   const body = await r.json().catch(()=>({}));
-  if (!r.ok) throw new Error(body.error || 'Something went wrong');
-  return body;
+  if (r.ok) return body;
+  // A 401 on any route other than login means the session has gone.
+  if (r.status === 401 && path !== '/api/login') { show('login'); throw new Error('Session expired — sign in again'); }
+  throw new Error(body.error || ('Request failed (' + r.status + ')'));
 }
 
 function show(which){

@@ -127,8 +127,11 @@ export default {
     }
 
     if (path === '/api/login' && req.method === 'POST') {
+      if (!env.ADMIN_PASSWORD) {
+        return json({ error: 'No password has been set on the Worker yet (ADMIN_PASSWORD secret is missing)' }, 503);
+      }
       const { user, password } = await req.json().catch(() => ({}));
-      const ok = safeEqual(user || '', env.ADMIN_USER) && safeEqual(password || '', env.ADMIN_PASSWORD || '');
+      const ok = safeEqual(user || '', env.ADMIN_USER) && safeEqual(password || '', env.ADMIN_PASSWORD);
       if (!ok) return json({ error: 'Wrong username or password' }, 401);
       const token = await makeToken(env.ADMIN_USER, secret);
       return json({ ok: true, user: env.ADMIN_USER }, 200, {
