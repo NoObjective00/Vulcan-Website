@@ -1,0 +1,34 @@
+[
+  {
+    "name": "Vulcan Bomber",
+    "recipe": "6x Smirnoff vodka, Vimto, lemonade, ice"
+  },
+  {
+    "name": "Vulcan Fun",
+    "recipe": "3x Smirnoff vodka, 2x Archers, Malibu, J20, lemonade & ice"
+  },
+  {
+    "name": "Vulcan Jack",
+    "recipe": "5x Jack Daniel's, 2x ginger ale, lime juice, Coca Cola, ice"
+  },
+  {
+    "name": "Vulcan Beast",
+    "recipe": "2x Blue WKD, 2x Orange WKD, 2x Smirnoff Ice, ice"
+  },
+  {
+    "name": "Vulcan Chill",
+    "recipe": "5x Southern Comfort, lime juice, lemonade, ice"
+  },
+  {
+    "name": "Vulcan Sourz",
+    "recipe": "2x Vulcan Juice, one of each Sourz, lemonade, ice"
+  },
+  {
+    "name": "Cheeky Vimto",
+    "recipe": "4x 50ml port, 3x Blue WKD, ice"
+  },
+  {
+    "name": "Vulcan Fire",
+    "recipe": "5x Fireball, 4x cranberry or apple, half pint lemonade or pint and a half of coke"
+  }
+]

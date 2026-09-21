@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Sourz 4x",
+    "price": "£6.30",
+    "featured": true
+  },
+  {
+    "name": "Sambucca 4x",
+    "price": "£10.00",
+    "featured": false
+  },
+  {
+    "name": "Jagerbomb / Skittlebomb 2x",
+    "price": "£6.50",
+    "featured": true
+  },
+  {
+    "name": "Baby Guinness / After Eights / Mini Beer / Kinder Bueno 2x",
+    "price": "£7.00",
+    "featured": false
+  },
+  {
+    "name": "Tequila Rose 3x",
+    "price": "£5.00",
+    "featured": false
+  },
+  {
+    "name": "Vulcan Juice shot 4x",
+    "price": "£9.50",
+    "featured": true
+  },
+  {
+    "name": "Vulcan Bomb 2x",
+    "price": "£4.90",
+    "featured": true
+  }
+]

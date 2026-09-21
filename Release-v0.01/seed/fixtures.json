@@ -1,0 +1,44 @@
+[
+  {
+    "day": "Sat 26 Sep",
+    "time": "12:30",
+    "match": "Manchester United v Newcastle",
+    "comp": "Premier League",
+    "sport": "Football"
+  },
+  {
+    "day": "Sat 26 Sep",
+    "time": "17:30",
+    "match": "Arsenal v Liverpool",
+    "comp": "Premier League",
+    "sport": "Football"
+  },
+  {
+    "day": "Sat 26 Sep",
+    "time": "20:00",
+    "match": "Catterall v Taylor",
+    "comp": "Super-lightweight title",
+    "sport": "Boxing"
+  },
+  {
+    "day": "Sun 27 Sep",
+    "time": "13:00",
+    "match": "Singapore Grand Prix",
+    "comp": "Formula 1",
+    "sport": "F1"
+  },
+  {
+    "day": "Mon 28 Sep",
+    "time": "20:00",
+    "match": "Aston Villa v Brighton",
+    "comp": "Premier League",
+    "sport": "Football"
+  },
+  {
+    "day": "Tue 29 Sep",
+    "time": "19:00",
+    "match": "World Grand Prix, semi-finals",
+    "comp": "PDC",
+    "sport": "Darts"
+  }
+]

@@ -107,6 +107,7 @@
 <script>
 const MAX_FEATURED = 6;
 const SECTIONS = {
+  homepage: { label:'Homepage', blurb:'The pub name, the headline over the photo, and the four figures in the band underneath.', add:null, kind:'homepage' },
   fixtures: { label:'Live sport', blurb:'Fixtures shown on the Live Sport page and the homepage.', add:'Add fixture',
     cols:[['day','Date','1.1fr','Sat 26 Sep'],['time','Time','.6fr','15:00'],['match','Match','2.4fr','Home v Away'],['comp','Competition','1.5fr','Premier League'],['sport','Sport','.9fr','Football']],
     blank:{day:'',time:'',match:'',comp:'',sport:''}, cap:12 },
@@ -118,10 +119,14 @@ const SECTIONS = {
     blank:{day:'',title:'',detail:'',time:''}, cap:7 },
   announcements: { label:'Announcements', blurb:'Two fixed notices under the homepage hero. Clear the text to hide one — an empty announcement never appears on the site.', add:null, kind:'announcements', cap:2 },
   offers: { label:'Offers', blurb:'Star up to six offers to feature them in the box on the Drinks page.', add:'Add offer', kind:'offers', cap:40 },
-  drinks: { label:'Drinks', blurb:'The three highlight cards, then what\u2019s behind the bar by category. One drink per line, written as Name | £1.00.', add:null, kind:'drinks', cap:12 },
+  drinks: { label:'Drinks', blurb:'The three highlight cards, then what\u2019s behind the bar by category, each drink with its price.', add:null, kind:'drinks', cap:12 },
   hours: { label:'Opening hours', blurb:'Used for the Find Us page and the open/closed badge in the header.', add:null, kind:'hours', cap:7 },
+  jugs: { label:'Vulcan jugs', blurb:'The jugs on the Drinks page, with what goes in them.', add:'Add jug',
+    cols:[['name','Name','1.2fr','Vulcan Bomber'],['recipe','Recipe','3fr','6x Smirnoff vodka, Vimto, lemonade, ice']],
+    blank:{name:'',recipe:''}, cap:12 },
+  copy: { label:'Page text', blurb:'The line of text under each page heading, plus the address and footer.', add:null, kind:'copy' },
   photos: { label:'Photos', blurb:'Photos guests have uploaded by scanning the QR code. They go on the site straight away — bin anything that shouldn\u2019t be there.', add:null, kind:'photos', cap:300, instant:true },
-  appearance: { label:'Appearance', blurb:'How the site looks. Changes apply everywhere as soon as you pick them.', add:null, kind:'appearance', instant:true }
+  appearance: { label:'Appearance', blurb:'Five themes for the site. Pick one and it applies everywhere straight away.', add:null, kind:'appearance', instant:true }
 };
 
 let data = {}, section = 'fixtures', dirty = new Set();
@@ -161,22 +166,37 @@ $('signout').addEventListener('click', async () => {
 
 // Sections with no Add button need their fixed slots to exist before they can
 // be edited — on a fresh KV namespace they come back empty.
-const FIXED_DRINKS = ['Draught','Bottled beer & cider','Gin','Spirits','Wine','Cocktails','Non-alcoholic'];
+const FIXED_DRINKS = ['Draught','Bottled beer & cider','Gin','Spirits','Cocktails','Wine','Shots','Mixers','Non-alcoholic'];
 const DRINK_SEED = {
   'Draught': ['Fosters','Amstel','Cruzcampo','Birra Moretti','Strongbow','Strongbow Dark Fruit','Theakston'],
   'Bottled beer & cider': ['Budweiser','Sol','Peroni','Estrella','Desperados','Corona','Newcastle Brown','Old Mout','Blue WKD','Smirnoff Ice'],
   'Gin': ["Gordon's","Gordon's Pink",'Edinburgh Rhubarb & Ginger','Whitley Neill Parma Violet','Bombay Sapphire','Tanqueray'],
   'Spirits': ['Vodka','Bacardi','Southern Comfort','Malibu','Captain Morgans','Kraken',"Jack Daniel's",'Famous Grouse'],
   'Wine': ['Pinot Grigio','White Zinfandel','Merlot','Prosecco'],
-  'Cocktails': ['Blue Lagoon','Sex on the Beach','Woo Woo','Mojito','Pornstar Martini','Espresso Martini'],
+  'Shots': ['Jagermeister / Jager Bomb','Skittle Bomb','Tequila Cream Bomb','Tequila','Wray & Nephew','Fireball','Silq Rose','Sourz','Sambucca','Baby Guinness','Mini Beer','After Eights','Kinder Bueno','Tequila Rose'],
+  'Mixers': ['Indian tonic','Slimline tonic','Cranberry juice','Fresh orange','Ginger ale'],
+  'Cocktails': ['Blue Lagoon','Sex on the Beach','Purple Rain','Woo Woo','Mojito','Pornstar Martini','Espresso Martini','Tequila Sunrise','Long Island Iced Tea','Strawberry Daiquiri','Black Russian'],
   'Non-alcoholic': ['Heineken Zero','Appletizer','Lemonade','Coke Zero','J20','Red Bull','Bottled water']
 };
+
+const splitDrink = s => { const b = String(s).split('|'); return { name: b[0].trim(), price: (b[1]||'').trim() || '£1.00' }; };
+const joinDrink = d => d.name + ' | ' + (d.price || '£1.00');
 function seedFixedSections(d){
   d.announcements = d.announcements || [];
   d.photos = d.photos || [];
   d.settings = d.settings || { uploadsOpen: true };
-  d.theme = d.theme || { name:'brass', mode:'dark' };
+  d.theme = d.theme || { name:'mahogany' };
   d.appearance = [];
+  d.homepage = [];
+  if (!d.copy || !d.copy.length) d.copy = [{}];
+  if (!d.brand || !d.brand.length) d.brand = [{ name: 'The Vulcan', messenger:'https://m.me/thevulcanpubwalkden', facebook:'https://www.facebook.com/thevulcanpubwalkden', instagram:'https://www.instagram.com/thevulcanpubwalkden/' }];
+  if (!d.hero || !d.hero.length) d.hero = [{ kicker:'Walkden · Established 1833', title:'The best night\nin town.', subtitle:'A proper local. Every match on the big screens, live bands most weekends, and a warm welcome at the bar seven days a week.' }];
+  if (!d.stats || !d.stats.length) d.stats = [
+    { figure:'23', label:'TVs for sports and football' },
+    { figure:'75"', label:'Big screen on the stage' },
+    { figure:'2', label:'Outdoor screens out back' },
+    { figure:'7', label:'Days a week, open late' }
+  ];
   while (d.announcements.length < 2) d.announcements.push({ tag:'', text:'' });
   d.announcements = d.announcements.slice(0,2);
   if (!d.drinks || !d.drinks.length) d.drinks = FIXED_DRINKS.map(title => ({ title, items: (DRINK_SEED[title]||[]).map(n => n + ' | £1.00') }));
@@ -305,15 +325,40 @@ function render(){
        </div>`).join('') +
       `</div>
        <div class="hd" style="letter-spacing:.18em;color:#c9963f;margin-bottom:10px">Categories</div>
-       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">` +
-      list.map((d,i)=>`<div class="card">
-        <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:10px">
+       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px">` +
+      list.map((d,i)=>{
+        const rows = (d.items||[]).map(splitDrink);
+        return `<div class="card">
+        <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:12px">
           <div class="hd" style="letter-spacing:.14em;color:#c9963f;font-size:12px">${esc(d.title)}</div>
-          <div style="font-size:11px;color:#6d6353">${(d.items||[]).length} items</div>
+          <div style="font-size:11px;color:#6d6353">${rows.length} items</div>
         </div>
-        <textarea data-i="${i}" data-f="items" rows="9" placeholder="Fosters | £1.00" style="background:#12100e;resize:vertical;line-height:1.6">${esc((d.items||[]).join('\n'))}</textarea>
-      </div>`).join('') + `</div>`;
-    $('note').textContent = 'One drink per line, as Name | £1.00. Clear a highlight\u2019s headline to hide that card. Empty categories disappear from the page.';
+        <div style="display:flex;flex-direction:column;gap:6px">` +
+        rows.map((r,j)=>`<div class="row" style="grid-template-columns:minmax(0,1fr) 92px 32px">
+            <input data-cat="${i}" data-row="${j}" data-df="name" value="${esc(r.name)}" placeholder="Drink" style="background:#12100e;padding:8px 10px">
+            <input data-cat="${i}" data-row="${j}" data-df="price" value="${esc(r.price)}" placeholder="£1.00" style="background:#12100e;padding:8px 10px;font-variant-numeric:tabular-nums">
+            <button class="icon" data-delcat="${i}" data-delrow="${j}" style="width:32px;height:34px" aria-label="Remove">&times;</button>
+          </div>`).join('') +
+        `</div>
+        <button data-addcat="${i}" class="btn" style="margin-top:10px;background:transparent;border:1px dashed rgba(201,150,63,.5);color:#c9963f;padding:8px 14px;font-size:11px;width:100%">+ Add drink</button>
+      </div>`;}).join('') + `</div>`;
+
+    const writeCat = (ci, rows) => { data.drinks[ci].items = rows.map(joinDrink); dirty.add('drinks'); paintDirty(); };
+    const rowsOf = ci => (data.drinks[ci].items||[]).map(splitDrink);
+    $('body').querySelectorAll('[data-cat]').forEach(el => el.addEventListener('input', () => {
+      const ci = +el.dataset.cat, rows = rowsOf(ci);
+      rows[+el.dataset.row][el.dataset.df] = el.value;
+      writeCat(ci, rows);
+    }));
+    $('body').querySelectorAll('[data-delcat]').forEach(el => el.addEventListener('click', () => {
+      const ci = +el.dataset.delcat, rows = rowsOf(ci);
+      rows.splice(+el.dataset.delrow, 1); writeCat(ci, rows); render();
+    }));
+    $('body').querySelectorAll('[data-addcat]').forEach(el => el.addEventListener('click', () => {
+      const ci = +el.dataset.addcat, rows = rowsOf(ci);
+      rows.push({ name:'', price:'£1.00' }); writeCat(ci, rows); render();
+    }));
+    $('note').textContent = 'Clear a highlight\u2019s headline to hide that card. A category with no drinks disappears from the page.';
   }
   else if (s.kind === 'hours'){
     $('body').innerHTML =
@@ -377,40 +422,67 @@ function render(){
     localStorage.setItem('vulcan_lastSeenPhotos', String(list.length));
   }
 
-  else if (s.kind === 'appearance'){
-    const t = data.theme || { name:'brass', mode:'dark' };
-    const swatch = (k,label,hex) => `<button data-accent="${k}" title="${label}" style="width:42px;height:42px;border:2px solid ${t.name===k?'#f2e8d7':'transparent'};background:${hex};cursor:pointer;padding:0"></button>`;
-    $('body').innerHTML =
-      `<div class="card" style="margin-bottom:16px">
-         <div class="hd" style="letter-spacing:.18em;color:#c9963f;margin-bottom:12px">Accent colour</div>
-         <div style="display:flex;gap:10px;flex-wrap:wrap">
-           ${swatch('brass','Brass','#c9963f')}${swatch('copper','Copper','#b9532f')}${swatch('bottle','Bottle green','#7d9a6a')}${swatch('oak','Oak','#c0a98a')}
-         </div>
-         <div style="font-size:13px;color:#6d6353;margin-top:12px">Used for headings, buttons, rules and the nav.</div>
-       </div>
-       <div class="card">
-         <div class="hd" style="letter-spacing:.18em;color:#c9963f;margin-bottom:12px">Background</div>
-         <div style="display:flex;gap:10px;flex-wrap:wrap">
-           <button data-mode="dark" style="flex:1 1 180px;border:2px solid ${t.mode==='dark'?'#c9963f':'rgba(242,232,215,.16)'};background:#1a1310;color:#f2e8d7;padding:18px;cursor:pointer;text-align:left">
-             <div style="font-weight:700;font-size:14px">Dark</div>
-             <div style="font-size:12px;color:#a08f78;margin-top:4px">Mahogany and brass, as now</div>
-           </button>
-           <button data-mode="light" style="flex:1 1 180px;border:2px solid ${t.mode==='light'?'#c9963f':'rgba(242,232,215,.16)'};background:#f4efe4;color:#1f1712;padding:18px;cursor:pointer;text-align:left">
-             <div style="font-weight:700;font-size:14px">Off-white</div>
-             <div style="font-size:12px;color:#6f6252;margin-top:4px">Light paper, dark ink</div>
-           </button>
-         </div>
-       </div>`;
+  else if (s.kind === 'copy'){
+    const c = (data.copy && data.copy[0]) || {};
+    const b2 = (data.brand && data.brand[0]) || {};
+    const field = (k,label,ph,rows) => `<div style="margin-bottom:16px">
+      <div class="hd" style="letter-spacing:.16em;color:#c9963f;margin-bottom:7px">${label}</div>
+      <textarea data-k="copy" data-i="0" data-f="${k}" rows="${rows||2}" placeholder="${ph}" style="background:#12100e;resize:vertical">${esc(c[k]||'')}</textarea>
+    </div>`;
+    $('body').innerHTML = `<div class="card">` +
+      field('sport','Live sport page',"Most Manchester United games shown live…") +
+      field('whatson',"What's on page",'Our regular nights, same every week…') +
+      field('music','Live music section','Bands and singers on the stage most Saturday nights…') +
+      field('drinks','Drinks page','Draught, bottles, a long gin list…') +
+      field('jugs','Vulcan jugs section','Made to share. Eight of them…') +
+      field('gallery','Gallery page','Karaoke, live bands, big matches…') +
+      field('hours','Note under the opening hours','Weekend hours can change for football fixtures…') +
+      `</div>
+      <div class="card" style="margin-top:16px">
+        <div class="hd" style="letter-spacing:.18em;color:#c9963f;margin-bottom:10px">Address</div>
+        <textarea data-k="brand" data-i="0" data-f="address" rows="2" placeholder="94 Worsley Road North,&#10;Walkden, M28 3QW" style="background:#12100e;resize:vertical;margin-bottom:12px">${esc(b2.address||'')}</textarea>
+        <div class="hd" style="letter-spacing:.18em;color:#c9963f;margin-bottom:10px">Footer line</div>
+        <input data-k="brand" data-i="0" data-f="footerLine" value="${esc(b2.footerLine||'')}" placeholder="Established 1833 · 94 Worsley Road North…" style="background:#12100e">
+      </div>`;
+    $('note').textContent = 'Leave anything blank to fall back to the wording the site ships with.';
+  }
 
-    const save = async patch => {
+  else if (s.kind === 'appearance'){
+    const cur = (data.theme && data.theme.name) || 'mahogany';
+    const THEMES = [
+      { key:'mahogany',  label:'Mahogany',   note:'Dark wood and brass. The original.',      bg:'#1a1310', band:'#1f3a34', ink:'#f2e8d7', accent:'#c9963f' },
+      { key:'snug',      label:'Snug',       note:'Deep green, warmer gold.',                bg:'#16241f', band:'#1d2f28', ink:'#f0ece0', accent:'#d6a15a' },
+      { key:'publicbar', label:'Public Bar', note:'Near-black with a copper accent.',        bg:'#17161a', band:'#231f21', ink:'#f1eeea', accent:'#e08a63' },
+      { key:'parlour',   label:'Parlour',    note:'Off-white paper, bottle green.',          bg:'#f4efe4', band:'#e3dac7', ink:'#1f1712', accent:'#3f5c33' },
+      { key:'taproom',   label:'Tap Room',   note:'Warm stone with a deep red.',             bg:'#f1eeea', band:'#ded7cd', ink:'#211c19', accent:'#8d2f24' }
+    ];
+    $('body').innerHTML =
+      `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px">` +
+      THEMES.map(t=>`<button data-theme="${t.key}" style="border:2px solid ${cur===t.key?'#c9963f':'rgba(242,232,215,.16)'};background:#1a1310;padding:0;cursor:pointer;text-align:left;display:block;width:100%">
+        <div style="background:${t.bg};padding:18px 16px 14px">
+          <div style="font-family:Georgia,serif;font-size:19px;color:${t.ink};line-height:1.1">The Vulcan</div>
+          <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;color:${t.accent};margin-top:7px">Live sport tonight</div>
+          <div style="display:flex;gap:6px;margin-top:12px">
+            <span style="flex:1;height:8px;background:${t.accent}"></span>
+            <span style="flex:1;height:8px;background:${t.band}"></span>
+            <span style="flex:1;height:8px;background:${t.ink};opacity:.35"></span>
+          </div>
+        </div>
+        <div style="padding:12px 16px 14px;background:#1a1310">
+          <div style="font-size:14px;font-weight:700;color:#f2e8d7;display:flex;justify-content:space-between;align-items:center">
+            ${t.label}${cur===t.key?'<span style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#c9963f">In use</span>':''}
+          </div>
+          <div style="font-size:12px;color:#a08f78;margin-top:4px">${t.note}</div>
+        </div>
+      </button>`).join('') + `</div>`;
+
+    $('body').querySelectorAll('[data-theme]').forEach(el => el.addEventListener('click', async () => {
       try {
-        const r = await api('/api/admin/theme',{method:'PUT',body:JSON.stringify({ name:t.name, mode:t.mode, ...patch })});
-        data.theme = r.theme; toast('Appearance updated'); render();
+        const r = await api('/api/admin/theme',{method:'PUT',body:JSON.stringify({ name: el.dataset.theme })});
+        data.theme = r.theme; toast(r.theme.label + ' applied'); render();
       } catch(err){ toast(err.message); }
-    };
-    $('body').querySelectorAll('[data-accent]').forEach(el => el.addEventListener('click', ()=>save({ name: el.dataset.accent })));
-    $('body').querySelectorAll('[data-mode]').forEach(el => el.addEventListener('click', ()=>save({ mode: el.dataset.mode })));
-    $('note').textContent = 'The hero photo stays dark in both, so the headline is always readable.';
+    }));
+    $('note').textContent = 'Each theme is a full palette, picked so the text stays readable. The hero photo keeps its dark overlay in all of them.';
   }
 
   $('add').style.display = s.add ? 'inline-block' : 'none';

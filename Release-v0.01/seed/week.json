@@ -1,0 +1,20 @@
+[
+  {
+    "day": "Tuesday",
+    "title": "Quiz Night",
+    "detail": "Teams of up to six. Cash prize and a bar tab.",
+    "time": "From 8pm"
+  },
+  {
+    "day": "Friday",
+    "title": "Karaoke",
+    "detail": "Grab the mic. Free entry, everyone welcome.",
+    "time": "From 9pm"
+  },
+  {
+    "day": "Saturday",
+    "title": "Live Music",
+    "detail": "Bands and singers on the stage after the football.",
+    "time": "From 9pm"
+  }
+]

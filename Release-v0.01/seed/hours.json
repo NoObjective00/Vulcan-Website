@@ -1,0 +1,37 @@
+[
+  {
+    "day": "Monday",
+    "open": "4pm",
+    "close": "12am"
+  },
+  {
+    "day": "Tuesday",
+    "open": "4pm",
+    "close": "12am"
+  },
+  {
+    "day": "Wednesday",
+    "open": "4pm",
+    "close": "12am"
+  },
+  {
+    "day": "Thursday",
+    "open": "4pm",
+    "close": "12am"
+  },
+  {
+    "day": "Friday",
+    "open": "2pm",
+    "close": "1am"
+  },
+  {
+    "day": "Saturday",
+    "open": "2pm",
+    "close": "1am"
+  },
+  {
+    "day": "Sunday",
+    "open": "2pm",
+    "close": "12am"
+  }
+]

@@ -9,9 +9,28 @@
 //   POST /api/admin/rollback     auth, { key } restores the previous version
 //   everything else              static files from ./public
 
-const KEYS = ['fixtures', 'music', 'announcements', 'offers', 'drinks', 'hours', 'highlights', 'week'];
+const KEYS = ['fixtures', 'music', 'announcements', 'offers', 'drinks', 'hours', 'highlights', 'week', 'hero', 'stats', 'brand', 'copy', 'jugs'];
 
 const DEFAULTS = {
+  brand: [{ name: 'The Vulcan', messenger: 'https://m.me/thevulcanpubwalkden', facebook: 'https://www.facebook.com/thevulcanpubwalkden', instagram: 'https://www.instagram.com/thevulcanpubwalkden/', address: '94 Worsley Road North,\nWalkden, M28 3QW', footerLine: 'Established 1833 · 94 Worsley Road North, Walkden, M28 3QW' }],
+  copy: [{}],
+  jugs: [
+    { name: 'Vulcan Bomber', recipe: '6x Smirnoff vodka, Vimto, lemonade, ice' },
+    { name: 'Vulcan Fun', recipe: '3x Smirnoff vodka, 2x Archers, Malibu, J20, lemonade & ice' },
+    { name: 'Vulcan Jack', recipe: "5x Jack Daniel's, 2x ginger ale, lime juice, Coca Cola, ice" },
+    { name: 'Vulcan Beast', recipe: '2x Blue WKD, 2x Orange WKD, 2x Smirnoff Ice, ice' },
+    { name: 'Vulcan Chill', recipe: '5x Southern Comfort, lime juice, lemonade, ice' },
+    { name: 'Vulcan Sourz', recipe: '2x Vulcan Juice, one of each Sourz, lemonade, ice' },
+    { name: 'Cheeky Vimto', recipe: '4x 50ml port, 3x Blue WKD, ice' },
+    { name: 'Vulcan Fire', recipe: '5x Fireball, 4x cranberry or apple, half pint lemonade or pint and a half of coke' }
+  ],
+  hero: [{ kicker: 'Walkden \u00b7 Established 1833', title: 'The best night\nin town.', subtitle: 'A proper local. Every match on the big screens, live bands most weekends, and a warm welcome at the bar seven days a week.' }],
+  stats: [
+    { figure: '23', label: 'TVs for sports and football' },
+    { figure: '75"', label: 'Big screen on the stage' },
+    { figure: '2', label: 'Outdoor screens out back' },
+    { figure: '7', label: 'Days a week, open late' }
+  ],
   fixtures: [], music: [], announcements: [], offers: [], drinks: [],
   week: [
     { day: 'Tuesday', title: 'Quiz Night', detail: 'Teams of up to six. Cash prize and a bar tab.', time: 'From 8pm' },
@@ -34,7 +53,7 @@ const DEFAULTS = {
   ]
 };
 
-const LIMITS = { fixtures: 12, music: 8, announcements: 2, offers: 40, drinks: 12, hours: 7, highlights: 3, week: 7 };
+const LIMITS = { fixtures: 12, music: 8, announcements: 2, offers: 40, drinks: 12, hours: 7, highlights: 3, week: 7, hero: 1, stats: 4, brand: 1, copy: 1, jugs: 12 };
 const MAX_FEATURED = 6;
 
 // Public photo uploads
@@ -113,20 +132,38 @@ async function readPhotos(env) {
   } catch { return []; }
 }
 
-const ACCENTS = {
-  brass:   { accent: '#c9963f', accentHi: '#e6b969', light: '#8a6220', lightHi: '#6f4e18' },
-  copper:  { accent: '#b9532f', accentHi: '#d4714c', light: '#9b3f1f', lightHi: '#7d3218' },
-  bottle:  { accent: '#7d9a6a', accentHi: '#9cb98a', light: '#4e6b3d', lightHi: '#3d5530' },
-  oak:     { accent: '#c0a98a', accentHi: '#d6c2a8', light: '#7a6544', lightHi: '#5f4e34' }
+// Five curated themes. Each carries its whole palette so contrast is decided
+// here, not left to chance when someone picks an accent.
+const THEMES = {
+  mahogany: { label: 'Mahogany', dark: true, vars: {
+    '--bg':'#1a1310','--panel':'#12100e','--band':'#1f3a34',
+    '--ink':'#f2e8d7','--ink2':'#e0d2b8','--muted':'#cbbba0','--dim':'#a89878','--faint':'#a1907a',
+    '--accent':'#c9963f','--accent-hi':'#e6b969','--on-accent':'#17110e' } },
+  snug: { label: 'Snug', dark: true, vars: {
+    '--bg':'#16241f','--panel':'#101a17','--band':'#1d2f28',
+    '--ink':'#f0ece0','--ink2':'#dcd5c4','--muted':'#c3bba7','--dim':'#a89f8d','--faint':'#a49c8b',
+    '--accent':'#d6a15a','--accent-hi':'#ecbd7d','--on-accent':'#101a17' } },
+  publicbar: { label: 'Public Bar', dark: true, vars: {
+    '--bg':'#17161a','--panel':'#0f0e11','--band':'#231f21',
+    '--ink':'#f1eeea','--ink2':'#ddd7d0','--muted':'#c2bab1','--dim':'#a8a09a','--faint':'#a49c96',
+    '--accent':'#e08a63','--accent-hi':'#f0a483','--on-accent':'#14100e' } },
+  parlour: { label: 'Parlour', dark: false, vars: {
+    '--bg':'#f4efe4','--panel':'#ebe3d4','--band':'#e3dac7',
+    '--ink':'#1f1712','--ink2':'#3a2e24','--muted':'#544a3e','--dim':'#645847','--faint':'#6a5e4f',
+    '--accent':'#3f5c33','--accent-hi':'#2f461f','--on-accent':'#f7f2e7' } },
+  taproom: { label: 'Tap Room', dark: false, vars: {
+    '--bg':'#f1eeea','--panel':'#e6e1da','--band':'#ded7cd',
+    '--ink':'#211c19','--ink2':'#3a322c','--muted':'#554c44','--dim':'#63594f','--faint':'#6b6157',
+    '--accent':'#8d2f24','--accent-hi':'#6f231a','--on-accent':'#f7f2e7' } }
 };
 
 async function readTheme(env) {
   try {
     const raw = await env.VULCAN.get('theme');
     const t = raw ? JSON.parse(raw) : null;
-    const name = t && ACCENTS[t.name] ? t.name : 'brass';
-    return { name, mode: t && t.mode === 'light' ? 'light' : 'dark', ...ACCENTS[name] };
-  } catch { return { name: 'brass', mode: 'dark', ...ACCENTS.brass }; }
+    const name = t && THEMES[t.name] ? t.name : 'mahogany';
+    return { name, label: THEMES[name].label, vars: THEMES[name].vars };
+  } catch { return { name: 'mahogany', label: THEMES.mahogany.label, vars: THEMES.mahogany.vars }; }
 }
 
 async function readSettings(env) {
@@ -164,6 +201,20 @@ function validate(key, value) {
     return 'Each highlight needs a label, a title and text under 300 characters';
   if (key === 'week' && !every(r => str(r.day) && str(r.title) && str(r.detail) && str(r.time)))
     return 'Each weekly night needs a day, title, description and time';
+  if (key === 'hero' && !every(r => str(r.kicker) && str(r.title) && typeof r.subtitle === 'string' && r.subtitle.length <= 300))
+    return 'The hero needs a label, a headline and text under 300 characters';
+  if (key === 'stats' && !every(r => str(r.figure) && str(r.label)))
+    return 'Each figure needs a number and a label';
+  if (key === 'jugs' && !every(r => str(r.name) && typeof r.recipe === 'string' && r.recipe.length <= 300))
+    return 'Each jug needs a name and a recipe under 300 characters';
+  if (key === 'copy' && !every(r => Object.values(r).every(v => typeof v === 'string' && v.length <= 400)))
+    return 'Each piece of copy must be text under 400 characters';
+  if (key === 'brand') {
+    if (!every(r => str(r.name) && r.name.trim().length > 1)) return 'The pub needs a name';
+    const link = v => v === '' || v === undefined || /^https?:\/\/\S+$/.test(String(v));
+    if (!every(r => link(r.messenger) && link(r.facebook) && link(r.instagram)))
+      return 'Links must start with https:// — leave one empty to hide it';
+  }
   return null;
 }
 
@@ -262,11 +313,10 @@ export default {
       }
 
       if (path === '/api/admin/theme' && req.method === 'PUT') {
-        const { name, mode } = await req.json().catch(() => ({}));
-        if (!ACCENTS[name]) return json({ error: 'Unknown accent colour' }, 400);
-        if (mode !== 'dark' && mode !== 'light') return json({ error: 'Mode must be dark or light' }, 400);
-        await env.VULCAN.put('theme', JSON.stringify({ name, mode }));
-        return json({ ok: true, theme: { name, mode, ...ACCENTS[name] } });
+        const { name } = await req.json().catch(() => ({}));
+        if (!THEMES[name]) return json({ error: 'Unknown theme' }, 400);
+        await env.VULCAN.put('theme', JSON.stringify({ name }));
+        return json({ ok: true, theme: { name, label: THEMES[name].label, vars: THEMES[name].vars } });
       }
 
       // Kill switch for the QR code.
