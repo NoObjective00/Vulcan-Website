@@ -112,7 +112,7 @@ const SECTIONS = {
   music: { label:'Live music', blurb:'Saturday night acts, shown on the What\u2019s On page.', add:'Add act',
     cols:[['date','Date','1fr','Sat 3 Oct'],['act','Act','2fr','Act name'],['kind','Description','2fr','Four-piece covers band'],['time','Time','.7fr','9pm']],
     blank:{date:'',act:'',kind:'',time:'9pm'}, cap:8 },
-  announcements: { label:'Announcements', blurb:'Two fixed notices under the homepage hero. Clear the text to hide one.', add:null, kind:'announcements', cap:2 },
+  announcements: { label:'Announcements', blurb:'Two fixed notices under the homepage hero. Clear the text to hide one — an empty announcement never appears on the site.', add:null, kind:'announcements', cap:2 },
   offers: { label:'Offers', blurb:'Star up to six offers to feature them in the box on the Drinks page.', add:'Add offer', kind:'offers', cap:40 },
   drinks: { label:'Drinks', blurb:'One drink per line. Categories are fixed so the page stays tidy.', add:null, kind:'drinks', cap:12 },
   hours: { label:'Opening hours', blurb:'Used for the Find Us page and the open/closed badge in the header.', add:null, kind:'hours', cap:7 }
@@ -153,9 +153,20 @@ $('signout').addEventListener('click', async () => {
   show('login');
 });
 
+// Sections with no Add button need their fixed slots to exist before they can
+// be edited — on a fresh KV namespace they come back empty.
+const FIXED_DRINKS = ['Draught','Bottled beer & cider','Gin','Spirits','Wine','Cocktails','Non-alcoholic'];
+function seedFixedSections(d){
+  d.announcements = d.announcements || [];
+  while (d.announcements.length < 2) d.announcements.push({ tag:'', text:'' });
+  d.announcements = d.announcements.slice(0,2);
+  if (!d.drinks || !d.drinks.length) d.drinks = FIXED_DRINKS.map(title => ({ title, items: [] }));
+  return d;
+}
+
 async function load(){
   const res = await api('/api/admin/content');
-  data = res; dirty.clear();
+  data = seedFixedSections(res); dirty.clear();
   $('lastPub').textContent = res.meta && res.meta.lastPublished
     ? new Date(res.meta.lastPublished).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}) : 'Never';
   show('shell'); render();

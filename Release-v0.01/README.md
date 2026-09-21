@@ -95,6 +95,10 @@ Point any new Worker at the **same** KV namespace, or you start from empty.
 
 ## Editing the site itself
 
-`public/index.html` is a compiled, self-contained file. Content that changes
-regularly is edited through `/admin`, not here. Design changes are made in the
-source project and recompiled.
+`public/index.html` is a compiled, self-contained file. On load it fetches
+`/api/content` and swaps in whatever the admin has published — fixtures, live
+music, announcements, offers and hours. If that fetch fails, the baked-in
+defaults stay on screen, so the site never shows an error or an empty page.
+
+Design changes are made in the source project and recompiled. Day-to-day content
+is edited through `/admin`, never here.
