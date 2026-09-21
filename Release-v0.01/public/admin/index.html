@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Site admin — The Vulcan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#12100e;color:#f2e8d7;font:15px/1.55 Archivo,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:#c9963f;text-decoration:none}
+  a:hover{color:#e6b969}
+  input,textarea,button,select{font:inherit}
+  input,textarea{background:#1a1310;border:1px solid rgba(242,232,215,.16);color:#f2e8d7;padding:10px 11px;width:100%;min-width:0}
+  input:focus,textarea:focus{outline:1px solid #c9963f;outline-offset:-1px}
+  ::placeholder{color:#6d6353}
+  .hd{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#6d6353;font-weight:700}
+  .btn{border:0;padding:12px 26px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;cursor:pointer}
+  .primary{background:#c9963f;color:#1a1310}
+  .primary:hover{background:#e6b969}
+  .ghost{background:transparent;border:1px solid rgba(242,232,215,.22);color:#cbbba0}
+  .ghost:hover{border-color:#c9963f;color:#c9963f}
+  .icon{background:transparent;border:1px solid rgba(242,232,215,.16);color:#8a7a63;width:36px;height:38px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .icon:hover{border-color:#b9532f;color:#e0805f}
+  .row{display:grid;gap:10px;align-items:center}
+  .nav a{display:flex;justify-content:space-between;gap:10px;padding:10px 13px;font-size:14px;font-weight:600;color:#a08f78;border-left:2px solid transparent}
+  .nav a:hover{background:rgba(201,150,63,.09)}
+  .nav a.on{color:#f2e8d7;background:rgba(201,150,63,.12);border-left-color:#c9963f}
+  .card{border:1px solid rgba(242,232,215,.16);background:#1a1310;padding:16px 18px}
+  @media(max-width:820px){#app{grid-template-columns:1fr!important}#side{position:static!important;padding-right:0!important}#main{border-left:0!important;padding-left:0!important}}
+</style>
+</head>
+<body>
+
+<div id="login" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px">
+  <form id="loginForm" style="width:100%;max-width:380px">
+    <div style="text-align:center;margin-bottom:34px">
+      <div style="font-family:'Abril Fatface',Georgia,serif;font-size:30px;letter-spacing:.06em">THE VULCAN</div>
+      <div class="hd" style="letter-spacing:.26em;color:#8a7a63;margin-top:10px">Site admin</div>
+    </div>
+    <div class="card" style="padding:30px 26px">
+      <label class="hd" style="display:block;color:#c9963f;letter-spacing:.18em;margin-bottom:8px">Username</label>
+      <input id="user" value="VulcanAdmin" autocomplete="username" style="margin-bottom:18px">
+      <label class="hd" style="display:block;color:#c9963f;letter-spacing:.18em;margin-bottom:8px">Password</label>
+      <input id="pass" type="password" autocomplete="current-password" style="margin-bottom:24px">
+      <button class="btn primary" style="width:100%;padding:13px" type="submit">Sign in</button>
+      <div id="loginErr" style="color:#e0805f;font-size:13px;margin-top:14px;display:none"></div>
+    </div>
+  </form>
+</div>
+
+<div id="shell" style="display:none;flex-direction:column;min-height:100vh">
+  <div style="border-bottom:1px solid rgba(201,150,63,.28);background:#1a1310;position:sticky;top:0;z-index:20">
+    <div style="max-width:1280px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+      <div style="font-family:'Abril Fatface',Georgia,serif;font-size:21px;letter-spacing:.05em">THE VULCAN</div>
+      <div class="hd" style="letter-spacing:.2em;color:#8a7a63;border-left:1px solid rgba(242,232,215,.2);padding-left:20px">Site admin</div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+        <a href="/" target="_blank" rel="noopener" class="hd" style="letter-spacing:.12em;color:#c9963f">View site &nearr;</a>
+        <div style="display:flex;align-items:center;gap:9px">
+          <div style="width:28px;height:28px;border-radius:50%;background:#c9963f;color:#1a1310;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px">V</div>
+          <span style="font-size:13px;color:#cbbba0">VulcanAdmin</span>
+        </div>
+        <button id="signout" class="btn ghost" style="padding:7px 13px;font-size:11px">Sign out</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="app" style="flex:1;max-width:1280px;width:100%;margin:0 auto;padding:0 22px;display:grid;grid-template-columns:220px minmax(0,1fr);align-items:start">
+    <div id="side" style="padding:30px 24px 30px 0;position:sticky;top:70px">
+      <div class="hd" style="letter-spacing:.2em;margin-bottom:12px">Content</div>
+      <div class="nav" id="nav" style="display:flex;flex-direction:column;gap:2px"></div>
+      <div style="margin-top:28px;border-top:1px solid rgba(242,232,215,.12);padding-top:18px">
+        <div class="hd" style="letter-spacing:.2em;margin-bottom:10px">Status</div>
+        <div style="font-size:12px;color:#8a7a63;line-height:1.6">Last published<br><span id="lastPub" style="color:#cbbba0">—</span></div>
+        <button id="rollback" class="btn ghost" style="margin-top:14px;padding:8px 12px;font-size:11px;width:100%">Undo last publish</button>
+      </div>
+    </div>
+
+    <div id="main" style="padding:30px 0 140px 28px;border-left:1px solid rgba(242,232,215,.12);min-width:0">
+      <h1 id="title" style="font-family:'Abril Fatface',Georgia,serif;font-size:clamp(28px,4vw,40px);margin:0 0 8px;line-height:1.05"></h1>
+      <p id="blurb" style="color:#8a7a63;margin:0 0 30px;max-width:620px"></p>
+      <div id="body"></div>
+      <button id="add" class="btn" style="margin-top:18px;background:transparent;border:1px dashed rgba(201,150,63,.5);color:#c9963f;padding:12px 20px;display:none">+ Add</button>
+      <div id="note" style="font-size:13px;color:#6d6353;margin-top:14px"></div>
+    </div>
+  </div>
+
+  <div style="position:sticky;bottom:0;z-index:30;border-top:1px solid rgba(201,150,63,.3);background:rgba(26,19,16,.97);backdrop-filter:blur(10px)">
+    <div style="max-width:1280px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+      <div id="dirty" style="display:flex;align-items:center;gap:10px;font-size:13px;color:#5fbf7a">
+        <span id="dot" style="width:8px;height:8px;border-radius:50%;background:#5fbf7a"></span><span id="dirtyText">Everything published</span>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:12px">
+        <button id="discard" class="btn ghost">Discard</button>
+        <button id="publish" class="btn primary">Publish to site</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" style="position:fixed;left:50%;bottom:92px;transform:translateX(-50%);z-index:60;background:#1f3a34;border:1px solid #c9963f;padding:13px 22px;font-size:14px;display:none;box-shadow:0 10px 30px rgba(0,0,0,.5)"></div>
+
+<script>
+const MAX_FEATURED = 6;
+const SECTIONS = {
+  fixtures: { label:'Live sport', blurb:'Fixtures shown on the Live Sport page and the homepage.', add:'Add fixture',
+    cols:[['day','Date','1.1fr','Sat 26 Sep'],['time','Time','.6fr','15:00'],['match','Match','2.4fr','Home v Away'],['comp','Competition','1.5fr','Premier League'],['sport','Sport','.9fr','Football']],
+    blank:{day:'',time:'',match:'',comp:'',sport:''}, cap:12 },
+  music: { label:'Live music', blurb:'Saturday night acts, shown on the What\u2019s On page.', add:'Add act',
+    cols:[['date','Date','1fr','Sat 3 Oct'],['act','Act','2fr','Act name'],['kind','Description','2fr','Four-piece covers band'],['time','Time','.7fr','9pm']],
+    blank:{date:'',act:'',kind:'',time:'9pm'}, cap:8 },
+  announcements: { label:'Announcements', blurb:'Two fixed notices under the homepage hero. Clear the text to hide one.', add:null, kind:'announcements', cap:2 },
+  offers: { label:'Offers', blurb:'Star up to six offers to feature them in the box on the Drinks page.', add:'Add offer', kind:'offers', cap:40 },
+  drinks: { label:'Drinks', blurb:'One drink per line. Categories are fixed so the page stays tidy.', add:null, kind:'drinks', cap:12 },
+  hours: { label:'Opening hours', blurb:'Used for the Find Us page and the open/closed badge in the header.', add:null, kind:'hours', cap:7 }
+};
+
+let data = {}, section = 'fixtures', dirty = new Set();
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(()=>t.style.display='none',2800); }
+
+async function api(path, opts){
+  const r = await fetch(path, Object.assign({ headers:{'content-type':'application/json'} }, opts));
+  if (r.status === 401){ show('login'); throw new Error('Signed out'); }
+  const body = await r.json().catch(()=>({}));
+  if (!r.ok) throw new Error(body.error || 'Something went wrong');
+  return body;
+}
+
+function show(which){
+  $('login').style.display = which==='login' ? 'flex' : 'none';
+  $('shell').style.display = which==='shell' ? 'flex' : 'none';
+}
+
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('loginErr').style.display='none';
+  try {
+    await api('/api/login', { method:'POST', body: JSON.stringify({ user:$('user').value, password:$('pass').value }) });
+    $('pass').value = '';
+    await load();
+  } catch(err){ $('loginErr').textContent = err.message; $('loginErr').style.display='block'; }
+});
+
+$('signout').addEventListener('click', async () => {
+  await fetch('/api/logout',{method:'POST'});
+  show('login');
+});
+
+async function load(){
+  const res = await api('/api/admin/content');
+  data = res; dirty.clear();
+  $('lastPub').textContent = res.meta && res.meta.lastPublished
+    ? new Date(res.meta.lastPublished).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}) : 'Never';
+  show('shell'); render();
+}
+
+function markDirty(){ dirty.add(section); paintDirty(); }
+function paintDirty(){
+  const n = dirty.size;
+  $('dirtyText').textContent = n ? n + ' section' + (n===1?'':'s') + ' with unsaved changes' : 'Everything published';
+  const c = n ? '#e0a94a' : '#5fbf7a';
+  $('dirty').style.color = c; $('dot').style.background = c;
+}
+
+function renderNav(){
+  $('nav').innerHTML = Object.keys(SECTIONS).map(k =>
+    `<a href="#${k}" class="${k===section?'on':''}"><span>${SECTIONS[k].label}</span><span style="font-size:11px;color:#6d6353">${(data[k]||[]).length}</span></a>`
+  ).join('');
+  [...$('nav').children].forEach(a => a.addEventListener('click', e => {
+    e.preventDefault(); section = a.getAttribute('href').slice(1); render();
+  }));
+}
+
+function bindInputs(){
+  $('body').querySelectorAll('[data-i]').forEach(el => {
+    el.addEventListener('input', () => {
+      const i = +el.dataset.i, f = el.dataset.f;
+      if (f === 'items') data[section][i].items = el.value.split('\n').map(s=>s.trim()).filter(Boolean);
+      else data[section][i][f] = el.value;
+      markDirty();
+    });
+  });
+  $('body').querySelectorAll('[data-del]').forEach(el => el.addEventListener('click', () => {
+    data[section].splice(+el.dataset.del,1); markDirty(); render();
+  }));
+  $('body').querySelectorAll('[data-star]').forEach(el => el.addEventListener('click', () => {
+    const i = +el.dataset.star, row = data[section][i];
+    if (!row.featured && data[section].filter(o=>o.featured).length >= MAX_FEATURED) return toast('Six featured offers is the limit — unstar one first');
+    row.featured = !row.featured; markDirty(); render();
+  }));
+}
+
+function render(){
+  const s = SECTIONS[section], list = data[section] || [];
+  renderNav();
+  $('title').textContent = s.label;
+  $('blurb').textContent = s.blurb;
+  $('note').textContent = '';
+  const del = i => `<button class="icon" data-del="${i}" aria-label="Delete">&times;</button>`;
+
+  if (s.cols){
+    const grid = s.cols.map(c=>`minmax(0,${c[2]})`).join(' ') + ' 36px';
+    $('body').innerHTML =
+      `<div class="row hd" style="grid-template-columns:${grid};padding-bottom:8px">${s.cols.map(c=>`<div>${c[1]}</div>`).join('')}<div></div></div>` +
+      `<div style="display:flex;flex-direction:column;gap:8px">` +
+      list.map((r,i)=>`<div class="row" style="grid-template-columns:${grid}">` +
+        s.cols.map(c=>`<input data-i="${i}" data-f="${c[0]}" value="${esc(r[c[0]])}" placeholder="${c[3]}">`).join('') +
+        del(i) + `</div>`).join('') + `</div>`;
+    $('note').textContent = list.length + ' of ' + s.cap + ' rows used.';
+  }
+  else if (s.kind === 'offers'){
+    const featured = list.filter(o=>o.featured).length;
+    $('body').innerHTML =
+      `<div class="row hd" style="grid-template-columns:36px minmax(0,3fr) minmax(0,.8fr) 36px;padding-bottom:8px"><div></div><div>Offer</div><div>Price</div><div></div></div>` +
+      `<div style="display:flex;flex-direction:column;gap:8px">` +
+      list.map((r,i)=>`<div class="row" style="grid-template-columns:36px minmax(0,3fr) minmax(0,.8fr) 36px">
+        <button class="icon" data-star="${i}" style="color:${r.featured?'#c9963f':'#5b5347'};border-color:rgba(242,232,215,.16)" aria-label="Feature">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="${r.featured?'#c9963f':'none'}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.2-5.4-2.9-5.4 2.9 1-6.2L3.2 9.5l6.1-.9z"/></svg>
+        </button>
+        <input data-i="${i}" data-f="name" value="${esc(r.name)}" placeholder="Offer name">
+        <input data-i="${i}" data-f="price" value="${esc(r.price)}" placeholder="£0.00">${del(i)}</div>`).join('') + `</div>`;
+    $('note').textContent = featured + ' of ' + MAX_FEATURED + ' featured slots used.';
+  }
+  else if (s.kind === 'announcements'){
+    $('body').innerHTML = list.map((r,i)=>`<div class="card" style="margin-bottom:12px">
+      <input data-i="${i}" data-f="tag" value="${esc(r.tag)}" placeholder="Label" style="background:#12100e;color:#c9963f;font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:10px">
+      <textarea data-i="${i}" data-f="text" rows="2" placeholder="What do you want people to know?" style="background:#12100e;resize:vertical">${esc(r.text)}</textarea></div>`).join('');
+  }
+  else if (s.kind === 'drinks'){
+    $('body').innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">` +
+      list.map((d,i)=>`<div class="card">
+        <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:10px">
+          <div class="hd" style="letter-spacing:.14em;color:#c9963f;font-size:12px">${esc(d.title)}</div>
+          <div style="font-size:11px;color:#6d6353">${(d.items||[]).length} items</div>
+        </div>
+        <textarea data-i="${i}" data-f="items" rows="9" placeholder="One drink per line" style="background:#12100e;resize:vertical;line-height:1.6">${esc((d.items||[]).join('\n'))}</textarea>
+      </div>`).join('') + `</div>`;
+    $('note').textContent = 'Leave a category empty and it disappears from the Drinks page.';
+  }
+  else if (s.kind === 'hours'){
+    $('body').innerHTML =
+      `<div class="row hd" style="grid-template-columns:repeat(3,minmax(0,1fr));padding-bottom:8px"><div>Day</div><div>Opens</div><div>Closes</div></div>` +
+      list.map((r,i)=>`<div class="row" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:8px">
+        <div style="font-weight:600">${esc(r.day)}</div>
+        <input data-i="${i}" data-f="open" value="${esc(r.open)}">
+        <input data-i="${i}" data-f="close" value="${esc(r.close)}"></div>`).join('');
+    $('note').textContent = 'The site works out “Open now” from these automatically.';
+  }
+
+  $('add').style.display = s.add ? 'inline-block' : 'none';
+  $('add').textContent = s.add || '';
+  bindInputs(); paintDirty();
+}
+
+$('add').addEventListener('click', () => {
+  const s = SECTIONS[section];
+  if (!s.add) return;
+  if (data[section].length >= s.cap) return toast(s.cap + ' is the limit for this section');
+  data[section].push(s.kind === 'offers' ? {name:'',price:'',featured:false} : Object.assign({}, s.blank));
+  markDirty(); render();
+});
+
+$('discard').addEventListener('click', async () => { await load(); toast('Changes discarded'); });
+
+$('publish').addEventListener('click', async () => {
+  if (!dirty.size) return toast('Nothing to publish');
+  try {
+    for (const key of [...dirty]) await api('/api/admin/content', { method:'PUT', body: JSON.stringify({ key, value: data[key] }) });
+    dirty.clear(); paintDirty();
+    $('lastPub').textContent = new Date().toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'});
+    toast('Published — live in a few seconds');
+  } catch(err){ toast(err.message); }
+});
+
+$('rollback').addEventListener('click', async () => {
+  if (!confirm('Undo the last publish for ' + SECTIONS[section].label + '?')) return;
+  try { await api('/api/admin/rollback',{method:'POST',body:JSON.stringify({key:section})}); await load(); toast('Rolled back'); }
+  catch(err){ toast(err.message); }
+});
+
+api('/api/admin/content').then(load).catch(()=>show('login'));
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+name = "vulcan-website"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+# Static site (index.html + assets) served straight from the edge.
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# Content store.
+# Namespace title: KV-TheVulcan-Website-001
+# Create with:  npx wrangler kv namespace create "KV-TheVulcan-Website-001"
+# The binding below is the name the code uses (env.VULCAN) — it must stay a
+# valid JS identifier, so it is not the same as the namespace title.
+[[kv_namespaces]]
+binding = "VULCAN"
+id = "PASTE_YOUR_KV_NAMESPACE_ID_HERE"
+
+[vars]
+ADMIN_USER = "VulcanAdmin"
+
+# Secrets — set these, never commit them:
+#   npx wrangler secret put ADMIN_PASSWORD
+#   npx wrangler secret put SESSION_SECRET      (any long random string)
