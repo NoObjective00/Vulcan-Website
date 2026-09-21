@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#1a1310">
+<title>Share your photos — The Vulcan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Archivo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#1a1310;color:#f2e8d7;font:17px/1.55 Archivo,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;
+       min-height:100svh;display:flex;flex-direction:column;align-items:center;padding:32px 22px calc(32px + env(safe-area-inset-bottom))}
+  .wrap{width:100%;max-width:440px;display:flex;flex-direction:column;flex:1}
+  h1{font-family:'Abril Fatface',Georgia,serif;font-size:34px;line-height:1.05;margin:0 0 12px;font-weight:400}
+  .kicker{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#c9963f;font-weight:700}
+  p{color:#cbbba0;margin:0 0 26px;text-wrap:pretty}
+  label.pick{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+    border:1px dashed rgba(201,150,63,.55);background:rgba(201,150,63,.07);color:#c9963f;
+    padding:40px 20px;text-align:center;cursor:pointer;min-height:180px}
+  label.pick:active{background:rgba(201,150,63,.14)}
+  .pick b{font-size:17px;letter-spacing:.06em;text-transform:uppercase}
+  .pick span{font-size:14px;color:#a08f78}
+  input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}
+  .tile{position:relative;aspect-ratio:1;background:#12100e;border:1px solid rgba(242,232,215,.16);overflow:hidden}
+  .tile img{width:100%;height:100%;object-fit:cover;display:block}
+  .tile .state{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    background:rgba(18,16,14,.72);font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+  .ok{color:#7bc98d}.bad{color:#e0805f;font-size:10px;text-align:center;padding:6px;line-height:1.3}
+  button{font:inherit;border:0;width:100%;padding:16px;margin-top:20px;background:#c9963f;color:#1a1310;
+    font-size:14px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;cursor:pointer}
+  button:disabled{opacity:.4;cursor:default}
+  .done{text-align:center;padding:40px 0}
+  .done .tick{font-size:48px;color:#c9963f;font-family:'Abril Fatface',Georgia,serif}
+  footer{margin-top:auto;padding-top:34px;font-size:12px;color:#6d6353;text-align:center;line-height:1.6}
+  a{color:#c9963f}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">The Vulcan, Walkden</div>
+  <h1>Share your photos</h1>
+  <p id="intro">Had a good night? Add your photos to the gallery on our website. They go up straight away.</p>
+
+  <div id="form">
+    <label class="pick" for="file">
+      <b>Choose photos</b>
+      <span>or take one now</span>
+    </label>
+    <input id="file" type="file" accept="image/*" multiple>
+    <div class="grid" id="grid"></div>
+    <button id="send" disabled>Send photos</button>
+  </div>
+
+  <div class="done" id="done" style="display:none">
+    <div class="tick">&check;</div>
+    <h1 style="font-size:26px;margin-top:14px">Thanks</h1>
+    <p id="doneMsg" style="margin-bottom:24px"></p>
+    <a href="/gallery">See the gallery &rarr;</a>
+  </div>
+
+  <footer>
+    By uploading you're happy for the photo to appear on thevulcan.info.<br>
+    Please don't upload anyone who wouldn't want to be online.
+  </footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let files = [];
+
+fetch('/api/uploads-open').then(r=>r.json()).then(s=>{
+  if (s && s.uploadsOpen === false) {
+    $('form').style.display='none';
+    $('intro').textContent = 'Photo uploads are closed at the moment. Ask behind the bar.';
+  }
+}).catch(()=>{});
+
+$('file').addEventListener('change', e => {
+  files = [...e.target.files].slice(0, 12);
+  $('grid').innerHTML = files.map((f,i)=>`<div class="tile" id="t${i}"><img src="${URL.createObjectURL(f)}" alt=""></div>`).join('');
+  $('send').disabled = !files.length;
+  $('send').textContent = files.length === 1 ? 'Send photo' : 'Send ' + files.length + ' photos';
+});
+
+$('send').addEventListener('click', async () => {
+  $('send').disabled = true;
+  $('send').textContent = 'Sending…';
+  let sent = 0, failed = 0;
+
+  for (let i = 0; i < files.length; i++) {
+    const tile = $('t' + i);
+    tile.insertAdjacentHTML('beforeend', '<div class="state">…</div>');
+    const state = tile.querySelector('.state');
+    try {
+      const r = await fetch('/api/upload', { method:'POST', headers:{'content-type':files[i].type||'image/jpeg'}, body: files[i] });
+      const b = await r.json().catch(()=>({}));
+      if (!r.ok) throw new Error(b.error || 'Failed');
+      state.className = 'state ok'; state.textContent = '\u2713'; sent++;
+    } catch (err) {
+      state.className = 'state bad'; state.textContent = err.message; failed++;
+    }
+  }
+
+  $('form').style.display = 'none';
+  $('done').style.display = 'block';
+  $('doneMsg').textContent = failed
+    ? sent + ' uploaded, ' + failed + " didn't make it."
+    : (sent === 1 ? 'Your photo is on the site.' : 'All ' + sent + ' photos are on the site.');
+});
+</script>
+</body>
+</html>

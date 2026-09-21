@@ -6,6 +6,9 @@ compatibility_date = "2026-01-01"
 [assets]
 directory = "./public"
 binding = "ASSETS"
+# Unknown paths (/drinks, /whats-on …) fall back to index.html so the page can
+# route them itself. /admin and real files are still served directly.
+not_found_handling = "single-page-application"
 
 # Content store.
 # Namespace title: KV-TheVulcan-Website-001
@@ -19,7 +22,12 @@ id = "910c53d8c1294b36bcb3839ef773a165"
 [vars]
 ADMIN_USER = "VulcanAdmin"
 
+# Photo uploads from the QR code land here.
+# Bucket: vulcanphotos001
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "vulcanphotos001"
+
 # Secrets — set these, never commit them:
 #   npx wrangler secret put ADMIN_PASSWORD
 #   npx wrangler secret put SESSION_SECRET      (any long random string)
-#   end

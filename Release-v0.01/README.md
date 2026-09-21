@@ -52,6 +52,24 @@ No build step. No `npm install` in the project. Deploying a change is
 | `POST /api/admin/rollback` | yes | `{key}` restores the previous version |
 | anything else | — | static file from `public/` |
 
+## Photo uploads from the pub
+
+A QR code on the tables points at `/upload`. Guests pick photos, they go into
+R2 (bucket `vulcanphotos001`), and they appear at the top of the gallery
+straight away.
+
+The bucket binding is already in `wrangler.toml`. Photos are served through the
+Worker at `/photo/<key>` with a one-year immutable cache — the bucket itself
+stays private.
+
+Guardrails: JPEG/PNG/WebP/HEIC only, 10MB per photo, 12 per upload, 300 in the
+gallery. The admin's **Photos** section shows everything with a delete button,
+a printable A6 QR card for the tables, and a **Close uploads** switch that turns
+the QR off instantly without a deploy.
+
+Uploads auto-publish, so the switch is the safety net rather than a moderation
+queue. Worth knowing before a busy Saturday.
+
 ## KV
 
 Namespace title `KV-TheVulcan-Website-001`, bound in the code as `VULCAN`

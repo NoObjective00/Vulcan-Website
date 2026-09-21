@@ -75,7 +75,7 @@
       <div style="margin-top:28px;border-top:1px solid rgba(242,232,215,.12);padding-top:18px">
         <div class="hd" style="letter-spacing:.2em;margin-bottom:10px">Status</div>
         <div style="font-size:12px;color:#8a7a63;line-height:1.6">Last published<br><span id="lastPub" style="color:#cbbba0">—</span></div>
-        <button id="rollback" class="btn ghost" style="margin-top:14px;padding:8px 12px;font-size:11px;width:100%">Undo last publish</button>
+      <button id="rollback" class="btn ghost" style="margin-top:14px;padding:8px 12px;font-size:11px;width:100%">Undo last publish</button>
       </div>
     </div>
 
@@ -103,6 +103,7 @@
 
 <div id="toast" style="position:fixed;left:50%;bottom:92px;transform:translateX(-50%);z-index:60;background:#1f3a34;border:1px solid #c9963f;padding:13px 22px;font-size:14px;display:none;box-shadow:0 10px 30px rgba(0,0,0,.5)"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
 const MAX_FEATURED = 6;
 const SECTIONS = {
@@ -112,10 +113,15 @@ const SECTIONS = {
   music: { label:'Live music', blurb:'Saturday night acts, shown on the What\u2019s On page.', add:'Add act',
     cols:[['date','Date','1fr','Sat 3 Oct'],['act','Act','2fr','Act name'],['kind','Description','2fr','Four-piece covers band'],['time','Time','.7fr','9pm']],
     blank:{date:'',act:'',kind:'',time:'9pm'}, cap:8 },
+  week: { label:'Weekly nights', blurb:'The regular nights shown as cards on the What\u2019s On page \u2014 quiz, karaoke, live music.', add:'Add night',
+    cols:[['day','Day','1fr','Tuesday'],['title','Night','1.6fr','Quiz Night'],['detail','Description','2.6fr','Teams of up to six.'],['time','Time','1fr','From 8pm']],
+    blank:{day:'',title:'',detail:'',time:''}, cap:7 },
   announcements: { label:'Announcements', blurb:'Two fixed notices under the homepage hero. Clear the text to hide one — an empty announcement never appears on the site.', add:null, kind:'announcements', cap:2 },
   offers: { label:'Offers', blurb:'Star up to six offers to feature them in the box on the Drinks page.', add:'Add offer', kind:'offers', cap:40 },
-  drinks: { label:'Drinks', blurb:'One drink per line. Categories are fixed so the page stays tidy.', add:null, kind:'drinks', cap:12 },
-  hours: { label:'Opening hours', blurb:'Used for the Find Us page and the open/closed badge in the header.', add:null, kind:'hours', cap:7 }
+  drinks: { label:'Drinks', blurb:'The three highlight cards, then what\u2019s behind the bar by category. One drink per line, written as Name | £1.00.', add:null, kind:'drinks', cap:12 },
+  hours: { label:'Opening hours', blurb:'Used for the Find Us page and the open/closed badge in the header.', add:null, kind:'hours', cap:7 },
+  photos: { label:'Photos', blurb:'Photos guests have uploaded by scanning the QR code. They go on the site straight away — bin anything that shouldn\u2019t be there.', add:null, kind:'photos', cap:300, instant:true },
+  appearance: { label:'Appearance', blurb:'How the site looks. Changes apply everywhere as soon as you pick them.', add:null, kind:'appearance', instant:true }
 };
 
 let data = {}, section = 'fixtures', dirty = new Set();
@@ -156,11 +162,27 @@ $('signout').addEventListener('click', async () => {
 // Sections with no Add button need their fixed slots to exist before they can
 // be edited — on a fresh KV namespace they come back empty.
 const FIXED_DRINKS = ['Draught','Bottled beer & cider','Gin','Spirits','Wine','Cocktails','Non-alcoholic'];
+const DRINK_SEED = {
+  'Draught': ['Fosters','Amstel','Cruzcampo','Birra Moretti','Strongbow','Strongbow Dark Fruit','Theakston'],
+  'Bottled beer & cider': ['Budweiser','Sol','Peroni','Estrella','Desperados','Corona','Newcastle Brown','Old Mout','Blue WKD','Smirnoff Ice'],
+  'Gin': ["Gordon's","Gordon's Pink",'Edinburgh Rhubarb & Ginger','Whitley Neill Parma Violet','Bombay Sapphire','Tanqueray'],
+  'Spirits': ['Vodka','Bacardi','Southern Comfort','Malibu','Captain Morgans','Kraken',"Jack Daniel's",'Famous Grouse'],
+  'Wine': ['Pinot Grigio','White Zinfandel','Merlot','Prosecco'],
+  'Cocktails': ['Blue Lagoon','Sex on the Beach','Woo Woo','Mojito','Pornstar Martini','Espresso Martini'],
+  'Non-alcoholic': ['Heineken Zero','Appletizer','Lemonade','Coke Zero','J20','Red Bull','Bottled water']
+};
 function seedFixedSections(d){
   d.announcements = d.announcements || [];
+  d.photos = d.photos || [];
+  d.settings = d.settings || { uploadsOpen: true };
+  d.theme = d.theme || { name:'brass', mode:'dark' };
+  d.appearance = [];
   while (d.announcements.length < 2) d.announcements.push({ tag:'', text:'' });
   d.announcements = d.announcements.slice(0,2);
-  if (!d.drinks || !d.drinks.length) d.drinks = FIXED_DRINKS.map(title => ({ title, items: [] }));
+  if (!d.drinks || !d.drinks.length) d.drinks = FIXED_DRINKS.map(title => ({ title, items: (DRINK_SEED[title]||[]).map(n => n + ' | £1.00') }));
+  d.highlights = d.highlights || [];
+  while (d.highlights.length < 3) d.highlights.push({ kicker:'', title:'', text:'' });
+  d.highlights = d.highlights.slice(0,3);
   return d;
 }
 
@@ -181,9 +203,15 @@ function paintDirty(){
 }
 
 function renderNav(){
-  $('nav').innerHTML = Object.keys(SECTIONS).map(k =>
-    `<a href="#${k}" class="${k===section?'on':''}"><span>${SECTIONS[k].label}</span><span style="font-size:11px;color:#6d6353">${(data[k]||[]).length}</span></a>`
-  ).join('');
+  const seen = Number(localStorage.getItem('vulcan_lastSeenPhotos') || 0);
+  $('nav').innerHTML = Object.keys(SECTIONS).map(k => {
+    const n = (data[k]||[]).length;
+    const fresh = k === 'photos' && n > seen && section !== 'photos';
+    const badge = fresh
+      ? `<span style="background:#c9963f;color:#1a1310;font-size:10px;font-weight:700;padding:1px 7px;border-radius:9px">${n - seen} new</span>`
+      : `<span style="font-size:11px;color:#6d6353">${n}</span>`;
+    return `<a href="#${k}" class="${k===section?'on':''}"><span>${SECTIONS[k].label}</span>${badge}</a>`;
+  }).join('');
   [...$('nav').children].forEach(a => a.addEventListener('click', e => {
     e.preventDefault(); section = a.getAttribute('href').slice(1); render();
   }));
@@ -192,10 +220,11 @@ function renderNav(){
 function bindInputs(){
   $('body').querySelectorAll('[data-i]').forEach(el => {
     el.addEventListener('input', () => {
+      const key = el.dataset.k || section;
       const i = +el.dataset.i, f = el.dataset.f;
-      if (f === 'items') data[section][i].items = el.value.split('\n').map(s=>s.trim()).filter(Boolean);
-      else data[section][i][f] = el.value;
-      markDirty();
+      if (f === 'items') data[key][i].items = el.value.split('\n').map(s=>s.trim()).filter(Boolean);
+      else data[key][i][f] = el.value;
+      dirty.add(key); paintDirty();
     });
   });
   $('body').querySelectorAll('[data-del]').forEach(el => el.addEventListener('click', () => {
@@ -206,6 +235,26 @@ function bindInputs(){
     if (!row.featured && data[section].filter(o=>o.featured).length >= MAX_FEATURED) return toast('Six featured offers is the limit — unstar one first');
     row.featured = !row.featured; markDirty(); render();
   }));
+}
+
+function printQr(){
+  const svg = $('qr').innerHTML;
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>The Vulcan — photo QR</title>
+    <link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Archivo:wght@600;700&display=swap" rel="stylesheet">
+    <style>@page{size:A6;margin:0}body{margin:0;width:105mm;height:148mm;background:#1a1310;color:#f2e8d7;
+      font-family:Archivo,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      text-align:center;padding:12mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .k{font-size:7pt;letter-spacing:.3em;text-transform:uppercase;color:#c9963f;font-weight:700}
+      h1{font-family:'Abril Fatface',Georgia,serif;font-size:26pt;line-height:1.05;margin:4mm 0 3mm;font-weight:400}
+      p{font-size:10pt;color:#e0d2b8;margin:0 0 8mm;line-height:1.5}
+      .qr{width:52mm;height:52mm;background:#f2e8d7;padding:4mm}
+      .f{font-size:8pt;color:#a08f78;margin-top:8mm;letter-spacing:.06em}</style></head>
+    <body><div class="k">The Vulcan, Walkden</div><h1>Had a good night?</h1>
+    <p>Scan to add your photos<br>to our gallery</p><div class="qr">${svg}</div>
+    <div class="f">thevulcan.info</div></body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(), 600);
 }
 
 function render(){
@@ -245,15 +294,26 @@ function render(){
       <textarea data-i="${i}" data-f="text" rows="2" placeholder="What do you want people to know?" style="background:#12100e;resize:vertical">${esc(r.text)}</textarea></div>`).join('');
   }
   else if (s.kind === 'drinks'){
-    $('body').innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">` +
+    const hl = data.highlights || [];
+    $('body').innerHTML =
+      `<div class="hd" style="letter-spacing:.18em;color:#c9963f;margin-bottom:10px">Three highlight cards</div>
+       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:30px">` +
+      hl.map((h,i)=>`<div class="card">
+         <input data-k="highlights" data-i="${i}" data-f="kicker" value="${esc(h.kicker)}" placeholder="Small label" style="background:#12100e;color:#c9963f;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">
+         <input data-k="highlights" data-i="${i}" data-f="title" value="${esc(h.title)}" placeholder="Headline" style="background:#12100e;margin-bottom:8px">
+         <textarea data-k="highlights" data-i="${i}" data-f="text" rows="3" placeholder="One or two lines" style="background:#12100e;resize:vertical">${esc(h.text)}</textarea>
+       </div>`).join('') +
+      `</div>
+       <div class="hd" style="letter-spacing:.18em;color:#c9963f;margin-bottom:10px">Categories</div>
+       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">` +
       list.map((d,i)=>`<div class="card">
         <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:10px">
           <div class="hd" style="letter-spacing:.14em;color:#c9963f;font-size:12px">${esc(d.title)}</div>
           <div style="font-size:11px;color:#6d6353">${(d.items||[]).length} items</div>
         </div>
-        <textarea data-i="${i}" data-f="items" rows="9" placeholder="One drink per line" style="background:#12100e;resize:vertical;line-height:1.6">${esc((d.items||[]).join('\n'))}</textarea>
+        <textarea data-i="${i}" data-f="items" rows="9" placeholder="Fosters | £1.00" style="background:#12100e;resize:vertical;line-height:1.6">${esc((d.items||[]).join('\n'))}</textarea>
       </div>`).join('') + `</div>`;
-    $('note').textContent = 'Leave a category empty and it disappears from the Drinks page.';
+    $('note').textContent = 'One drink per line, as Name | £1.00. Clear a highlight\u2019s headline to hide that card. Empty categories disappear from the page.';
   }
   else if (s.kind === 'hours'){
     $('body').innerHTML =
@@ -263,6 +323,94 @@ function render(){
         <input data-i="${i}" data-f="open" value="${esc(r.open)}">
         <input data-i="${i}" data-f="close" value="${esc(r.close)}"></div>`).join('');
     $('note').textContent = 'The site works out “Open now” from these automatically.';
+  }
+
+  else if (s.kind === 'photos'){
+    const open = !data.settings || data.settings.uploadsOpen !== false;
+    $('body').innerHTML =
+      `<div class="card" style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:20px">
+         <div id="qr" style="width:104px;height:104px;background:#f2e8d7;padding:7px;flex:none"></div>
+         <div style="flex:1 1 220px;min-width:0">
+           <div class="hd" style="color:#c9963f;letter-spacing:.18em;margin-bottom:6px">Table QR code</div>
+           <div style="font-size:13px;color:#a08f78;line-height:1.5">Guests scan this to upload. Print it for the tables.</div>
+           <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+             <button id="printQr" class="btn ghost" style="padding:8px 14px;font-size:11px">Print QR</button>
+             <button id="toggleUploads" class="btn ghost" style="padding:8px 14px;font-size:11px">${open?'Close uploads':'Reopen uploads'}</button>
+           </div>
+         </div>
+         <div style="display:flex;align-items:center;gap:9px;font-size:13px;color:${open?'#5fbf7a':'#e0805f'}">
+           <span style="width:8px;height:8px;border-radius:50%;background:${open?'#5fbf7a':'#e0805f'}"></span>
+           ${open?'Uploads open':'Uploads closed'}
+         </div>
+       </div>` +
+      (list.length
+        ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">` +
+          list.map(p=>`<div style="position:relative;aspect-ratio:1;border:1px solid rgba(242,232,215,.16);overflow:hidden">
+            <img src="/photo/${encodeURIComponent(p.key)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">
+            <div style="position:absolute;left:0;right:0;bottom:0;padding:5px 7px;background:rgba(18,16,14,.78);font-size:10px;color:#a08f78">${new Date(p.at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</div>
+            <button class="icon" data-photo="${esc(p.key)}" title="Delete photo" style="position:absolute;top:6px;right:6px;width:28px;height:28px;background:rgba(18,16,14,.8)">&times;</button>
+          </div>`).join('') + `</div>`
+        : `<div class="card" style="text-align:center;padding:40px 20px;color:#6d6353">No photos uploaded yet.</div>`);
+
+    if (window.qrcode){
+      const q = qrcode(0,'M'); q.addData(location.origin + '/upload'); q.make();
+      $('qr').innerHTML = q.createSvgTag({ cellSize:4, margin:0, scalable:true });
+    }
+    $('printQr').addEventListener('click', printQr);
+    $('toggleUploads').addEventListener('click', async () => {
+      try {
+        const r = await api('/api/admin/uploads',{method:'PUT',body:JSON.stringify({open:!open})});
+        data.settings = { uploadsOpen: r.uploadsOpen };
+        toast(r.uploadsOpen ? 'Uploads reopened' : 'Uploads closed');
+        render();
+      } catch(err){ toast(err.message); }
+    });
+    $('body').querySelectorAll('[data-photo]').forEach(el => el.addEventListener('click', async () => {
+      if (!confirm('Delete this photo? It comes off the site immediately.')) return;
+      try {
+        await api('/api/admin/photo',{method:'DELETE',body:JSON.stringify({key:el.dataset.photo})});
+        data.photos = data.photos.filter(p=>p.key!==el.dataset.photo);
+        toast('Photo deleted'); render();
+      } catch(err){ toast(err.message); }
+    }));
+    $('note').textContent = list.length + ' photo' + (list.length===1?'':'s') + ' in the gallery.';
+    localStorage.setItem('vulcan_lastSeenPhotos', String(list.length));
+  }
+
+  else if (s.kind === 'appearance'){
+    const t = data.theme || { name:'brass', mode:'dark' };
+    const swatch = (k,label,hex) => `<button data-accent="${k}" title="${label}" style="width:42px;height:42px;border:2px solid ${t.name===k?'#f2e8d7':'transparent'};background:${hex};cursor:pointer;padding:0"></button>`;
+    $('body').innerHTML =
+      `<div class="card" style="margin-bottom:16px">
+         <div class="hd" style="letter-spacing:.18em;color:#c9963f;margin-bottom:12px">Accent colour</div>
+         <div style="display:flex;gap:10px;flex-wrap:wrap">
+           ${swatch('brass','Brass','#c9963f')}${swatch('copper','Copper','#b9532f')}${swatch('bottle','Bottle green','#7d9a6a')}${swatch('oak','Oak','#c0a98a')}
+         </div>
+         <div style="font-size:13px;color:#6d6353;margin-top:12px">Used for headings, buttons, rules and the nav.</div>
+       </div>
+       <div class="card">
+         <div class="hd" style="letter-spacing:.18em;color:#c9963f;margin-bottom:12px">Background</div>
+         <div style="display:flex;gap:10px;flex-wrap:wrap">
+           <button data-mode="dark" style="flex:1 1 180px;border:2px solid ${t.mode==='dark'?'#c9963f':'rgba(242,232,215,.16)'};background:#1a1310;color:#f2e8d7;padding:18px;cursor:pointer;text-align:left">
+             <div style="font-weight:700;font-size:14px">Dark</div>
+             <div style="font-size:12px;color:#a08f78;margin-top:4px">Mahogany and brass, as now</div>
+           </button>
+           <button data-mode="light" style="flex:1 1 180px;border:2px solid ${t.mode==='light'?'#c9963f':'rgba(242,232,215,.16)'};background:#f4efe4;color:#1f1712;padding:18px;cursor:pointer;text-align:left">
+             <div style="font-weight:700;font-size:14px">Off-white</div>
+             <div style="font-size:12px;color:#6f6252;margin-top:4px">Light paper, dark ink</div>
+           </button>
+         </div>
+       </div>`;
+
+    const save = async patch => {
+      try {
+        const r = await api('/api/admin/theme',{method:'PUT',body:JSON.stringify({ name:t.name, mode:t.mode, ...patch })});
+        data.theme = r.theme; toast('Appearance updated'); render();
+      } catch(err){ toast(err.message); }
+    };
+    $('body').querySelectorAll('[data-accent]').forEach(el => el.addEventListener('click', ()=>save({ name: el.dataset.accent })));
+    $('body').querySelectorAll('[data-mode]').forEach(el => el.addEventListener('click', ()=>save({ mode: el.dataset.mode })));
+    $('note').textContent = 'The hero photo stays dark in both, so the headline is always readable.';
   }
 
   $('add').style.display = s.add ? 'inline-block' : 'none';
@@ -283,7 +431,10 @@ $('discard').addEventListener('click', async () => { await load(); toast('Change
 $('publish').addEventListener('click', async () => {
   if (!dirty.size) return toast('Nothing to publish');
   try {
-    for (const key of [...dirty]) await api('/api/admin/content', { method:'PUT', body: JSON.stringify({ key, value: data[key] }) });
+    for (const key of [...dirty]) {
+      if (SECTIONS[key] && SECTIONS[key].instant) continue; // photos save as you go
+      await api('/api/admin/content', { method:'PUT', body: JSON.stringify({ key, value: data[key] }) });
+    }
     dirty.clear(); paintDirty();
     $('lastPub').textContent = new Date().toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'});
     toast('Published — live in a few seconds');
@@ -291,6 +442,7 @@ $('publish').addEventListener('click', async () => {
 });
 
 $('rollback').addEventListener('click', async () => {
+  if (SECTIONS[section].instant) return toast('Photos are deleted individually, not rolled back');
   if (!confirm('Undo the last publish for ' + SECTIONS[section].label + '?')) return;
   try { await api('/api/admin/rollback',{method:'POST',body:JSON.stringify({key:section})}); await load(); toast('Rolled back'); }
   catch(err){ toast(err.message); }
